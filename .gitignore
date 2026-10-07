@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.log
+*.db
+*.sqlite
+.vscode/
+
+# 不提交私人和公司资料
+private_data/
+demo_private/

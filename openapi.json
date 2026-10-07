@@ -1,0 +1,201 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "工业设备维护Agent服务",
+    "version": "1.0.0",
+    "description": "设备参数查询、RAG文档检索和工单创建接口"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8000"
+    }
+  ],
+  "paths": {
+    "/parameter": {
+      "get": {
+        "operationId": "getEquipmentParameter",
+        "summary": "查询设备参数",
+        "description": "根据设备型号和参数名称查询参数值、单位和来源",
+        "parameters": [
+          {
+            "name": "model",
+            "in": "query",
+            "required": true,
+            "description": "设备型号，例如Device-A或Device-B",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "field",
+            "in": "query",
+            "required": true,
+            "description": "参数名称，例如提升电机功率",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "field": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ticket": {
+      "post": {
+        "operationId": "createMaintenanceTicket",
+        "summary": "创建维护工单",
+        "description": "根据设备型号、问题描述和依据创建维护工单",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "description": "设备型号"
+                  },
+                  "issue": {
+                    "type": "string",
+                    "description": "设备问题描述"
+                  },
+                  "evidence": {
+                    "type": "string",
+                    "description": "创建工单的依据"
+                  }
+                },
+                "required": [
+                  "model",
+                  "issue"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "工单创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "ticket": {
+                      "type": "object",
+                      "properties": {
+                        "ticket_id": {
+                          "type": "string"
+                        },
+                        "model": {
+                          "type": "string"
+                        },
+                        "issue": {
+                          "type": "string"
+                        },
+                        "evidence": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat": {
+      "post": {
+        "operationId": "chatWithAgent",
+        "summary": "Agent聊天问答",
+        "description": "输入自然语言问题，由Agent选择参数查询、RAG检索或工单创建工具。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "description": "用户自然语言问题"
+                  }
+                },
+                "required": [
+                  "question"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "查询或文档检索成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "tool_call": {
+                      "type": "object"
+                    },
+                    "result": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "写入操作需要人工确认"
+          },
+          "400": {
+            "description": "问题无法处理"
+          }
+        }
+      }
+    }
+  }
+}
