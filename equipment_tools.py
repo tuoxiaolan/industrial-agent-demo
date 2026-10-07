@@ -1,3 +1,4 @@
+from database import save_ticket
 PARAMETERS = {
     ("Device-A", "提升电机功率"): {
         "value": 3.0,
@@ -68,7 +69,7 @@ def normalize_model(model):
     value = model.strip().upper()
     return MODEL_ALIASES.get(value, value)
 
-TICKETS = []
+
 
 
 def create_maintenance_ticket(model, issue, evidence):
@@ -78,17 +79,11 @@ def create_maintenance_ticket(model, issue, evidence):
             "error": "设备型号和问题描述不能为空",
         }
 
-    ticket_id = f"MT-{len(TICKETS) + 1:04d}"
-
-    ticket = {
-        "ticket_id": ticket_id,
-        "model": normalize_model(model),
-        "issue": issue.strip(),
-        "evidence": evidence.strip(),
-        "status": "created",
-    }
-
-    TICKETS.append(ticket)
+    ticket = save_ticket(
+        model=normalize_model(model),
+        issue=issue.strip(),
+        evidence=evidence.strip(),
+    )
 
     return {
         "ok": True,
