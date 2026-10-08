@@ -1,0 +1,112 @@
+[
+  {
+    "id": 1,
+    "question": "Device-A的提升电机功率是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": 3.0
+  },
+  {
+    "id": 2,
+    "question": "Device-B的处理能力是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": "100～1000"
+  },
+  {
+    "id": 3,
+    "question": "Device-B的维护流程是什么？",
+    "expected_tool": "search_manual"
+  },
+  {
+    "id": 4,
+    "question": "给Device-B创建一个提升电机功率异常工单",
+    "expected_tool": "create_maintenance_ticket"
+  },
+  {
+    "id": 5,
+    "question": "它有多重？",
+    "expected_tool": null
+  },
+  {
+    "id": 6,
+    "question": "Device-A的净负载是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": 800
+  },
+  {
+    "id": 7,
+    "question": "Device-A的重量是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": 1200
+  },
+  {
+    "id": 8,
+    "question": "Device-A年度维护周期是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": "每年或运行1500小时后，以先到者为准"
+  },
+  {
+    "id": 9,
+    "question": "Device-A的故障排查步骤是什么？",
+    "expected_tool": "search_manual"
+  },
+  {
+    "id": 10,
+    "question": "Device-B的整粒电机功率是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": 5.5
+  },
+  {
+    "id": 11,
+    "question": "Device-B的产能是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": "100～1000"
+  },
+  {
+    "id": 12,
+    "question": "Device-B的净负载是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": 1100
+  },
+  {
+    "id": 13,
+    "question": "Device-B的设备重量是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": 1500
+  },
+  {
+    "id": 14,
+    "question": "Device-B年度维护周期是多少？",
+    "expected_tool": "get_equipment_parameter",
+    "expected_value": "每年或运行1200小时后，以先到者为准"
+  },
+  {
+    "id": 15,
+    "question": "Device-B的故障排查流程是什么？",
+    "expected_tool": "search_manual"
+  },
+  {
+    "id": 16,
+    "question": "Device-A最大负载是多少？",
+    "expected_tool": null
+  },
+  {
+    "id": 17,
+    "question": "Device-B的防爆等级是多少？",
+    "expected_tool": null
+  },
+  {
+    "id": 18,
+    "question": "Device-C的提升电机功率是多少？",
+    "expected_tool": null
+  },
+  {
+    "id": 19,
+    "question": "给Device-A创建一个异常工单",
+    "expected_tool": "create_maintenance_ticket"
+  },
+  {
+    "id": 20,
+    "question": "设备B有多重？",
+    "expected_tool": null
+  }
+]
