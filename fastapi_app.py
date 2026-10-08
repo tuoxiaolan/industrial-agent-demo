@@ -1,3 +1,9 @@
+import json
+import logging
+import time
+import uuid
+
+from fastapi import Request
 from database import list_tickets
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
@@ -16,9 +22,15 @@ app = FastAPI(
     version="1.0.0",
     description="设备参数查询、RAG检索和工单创建接口",
 )
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+)
+
+logger = logging.getLogger("industrial_agent")
 
 
-API_KEY = "dev-key-123"
+from config import API_KEY
 
 
 class TicketRequest(BaseModel):
@@ -38,6 +50,46 @@ def verify_api_key(x_api_key: str):
             detail="Unauthorized",
         )
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    request_id = uuid.uuid4().hex
+    start_time = time.perf_counter()
+
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration_ms = round(
+            (time.perf_counter() - start_time) * 1000,
+            2,
+        )
+
+        logger.exception(json.dumps({
+            "request_id": request_id,
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": 500,
+            "duration_ms": duration_ms,
+            "error": "unhandled_exception",
+        }, ensure_ascii=False))
+
+        raise
+
+    duration_ms = round(
+        (time.perf_counter() - start_time) * 1000,
+        2,
+    )
+
+    response.headers["X-Request-ID"] = request_id
+
+    logger.info(json.dumps({
+        "request_id": request_id,
+        "method": request.method,
+        "path": request.url.path,
+        "status_code": response.status_code,
+        "duration_ms": duration_ms,
+    }, ensure_ascii=False))
+
+    return response
 
 @app.get("/health")
 def health():
@@ -79,16 +131,6 @@ def create_ticket(
         issue=request.issue,
         evidence=request.evidence,
     )
-    @app.get("/tickets")
-    def tickets(
-    x_api_key: str = Header(default=""),
-):
-     verify_api_key(x_api_key)
-
-    return {
-        "ok": True,
-        "tickets": list_tickets(),
-    }
 
     if not result["ok"]:
         raise HTTPException(
@@ -97,6 +139,18 @@ def create_ticket(
         )
 
     return result
+
+
+@app.get("/tickets")
+def tickets(
+    x_api_key: str = Header(default=""),
+):
+    verify_api_key(x_api_key)
+
+    return {
+        "ok": True,
+        "tickets": list_tickets(),
+    }
 
 
 @app.post("/chat")
@@ -147,3 +201,11 @@ def chat(
         "tool_call": tool_call,
         "result": result,
     }
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=8001,
+    )
