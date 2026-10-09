@@ -9,4 +9,3 @@ venv/
 *.sqlite
 *.log
 .vscode/
-tests/
