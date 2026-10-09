@@ -16,8 +16,8 @@
 - 写入操作增加人工确认机制
 - 使用 SQLite 持久化工单
 - 提供 FastAPI HTTP 接口
-- 支持 API Key 认证
-- 包含单元测试和集成测试
+- 支持 API Key 认证和环境变量配置
+- 包含请求日志、单元测试、集成测试与评测集
 
 ## 技术栈
 
@@ -25,9 +25,11 @@
 - FastAPI
 - Uvicorn
 - Pydantic
+- python-dotenv
 - SQLite
 - Markdown
 - unittest
+- Docker
 
 当前 RAG 检索使用关键词、中文二元组和章节标题加权，尚未接入 Embedding 和向量数据库。Agent 当前使用规则决策模拟 LLM Function Calling，后续可替换为真实模型调用。
 
@@ -158,8 +160,11 @@ industrial-agent-demo/
 │   └── Device-B-maintenance.md
 ├── agent_loop.py
 ├── agent_chat.py
+├── config.py
 ├── database.py
 ├── equipment_tools.py
+├── evaluate_agent.py
+├── evaluation_set.json
 ├── fastapi_app.py
 ├── knowledge_tools.py
 ├── rag_ingest.py
@@ -168,7 +173,10 @@ industrial-agent-demo/
 ├── tool_dispatcher.py
 ├── tool_schemas.py
 ├── openapi.json
+├── Dockerfile
+├── .dockerignore
 ├── requirements.txt
+├── .env.example
 ├── .gitignore
 └── test_*.py
 ```
@@ -182,14 +190,32 @@ python -m pip install -r requirements.txt
 如果直接安装：
 
 ```powershell
-python -m pip install fastapi uvicorn pydantic
+python -m pip install fastapi uvicorn pydantic python-dotenv
 ```
+
+## 环境变量
+
+创建 `.env`：
+
+```text
+EQUIPMENT_API_KEY=dev-key-123
+```
+
+`.env.example`：
+
+```text
+EQUIPMENT_API_KEY=your-api-key-here
+```
+
+`.env`不会上传GitHub。
 
 ## 启动服务
 
 ```powershell
 python -m uvicorn fastapi_app:app --reload --port 8001
 ```
+
+也可以直接运行 `fastapi_app.py`。
 
 启动后访问接口文档：
 
@@ -203,7 +229,7 @@ http://127.0.0.1:8001/docs
 http://127.0.0.1:8001/health
 ```
 
-原来的标准库 HTTP 服务 `server.py` 保留用于教学对比，推荐使用 FastAPI 版本。
+原来的标准库HTTP服务 `server.py`保留用于教学对比，推荐使用FastAPI版本。
 
 ## API 接口
 
@@ -213,18 +239,12 @@ http://127.0.0.1:8001/health
 | GET | /parameter | 查询设备参数 |
 | POST | /ticket | 创建维护工单 |
 | GET | /tickets | 查询工单列表 |
-| POST | /chat | Agent 自然语言问答 |
-
-本地测试 API Key：
-
-```text
-dev-key-123
-```
+| POST | /chat | Agent自然语言问答 |
 
 请求头：
 
 ```text
-x_api_key: dev-key-123
+x-api-key: dev-key-123
 ```
 
 ## API 示例
@@ -235,7 +255,7 @@ x_api_key: dev-key-123
 GET /parameter?model=Device-B&field=提升电机功率
 ```
 
-### Agent 问答
+### Agent问答
 
 ```json
 {
@@ -280,7 +300,7 @@ tickets
 - created_at
 ```
 
-`agent.db`和`*.db`已加入`.gitignore`，不会上传GitHub。
+`agent.db`和`*.db`已加入 `.gitignore`，不会上传GitHub。
 
 ## 运行测试
 
@@ -288,6 +308,12 @@ tickets
 
 ```powershell
 python -m unittest -v
+```
+
+运行FastAPI自动测试：
+
+```powershell
+python test_fastapi.py
 ```
 
 运行工单接口集成测试：
@@ -302,7 +328,7 @@ python test_ticket_selfcontained.py
 python test_chat_selfcontained.py
 ```
 
-## Agent 决策逻辑
+## Agent决策逻辑
 
 当前使用规则决策模拟大模型的工具选择：
 
@@ -320,59 +346,39 @@ python test_chat_selfcontained.py
 -> 返回错误或提示补充信息
 ```
 
-该决策层可替换为真实 LLM Function Calling。
+该决策层可替换为真实LLM Function Calling。
 
-## 安全设计
+## 日志与安全设计
 
-- API Key认证
+- API Key通过环境变量读取
+- 请求日志记录method、path、status_code、duration_ms和request_id
 - 查询类工具可以直接执行
 - 写入类工具需要人工确认
 - Agent接口不会直接创建工单
-- `/chat`对工单请求返回`requires_confirmation: true`
-- 用户确认后再调用`/ticket`
+- `/chat`对工单请求返回 `requires_confirmation: true`
+- 用户确认后再调用 `/ticket`
 
-## 当前限制
+## Docker部署
 
-- 参数保存在Python字典中
-- RAG使用基础关键词检索，尚未使用Embedding
-- Agent决策使用规则模拟，尚未接入真实LLM
-- API Key暂时硬编码，仅用于本地演示
-- 暂无Docker和云端部署
-- 暂无完整评测集
+已验证以下命令：
 
-## 后续计划
+```powershell
+docker build -t industrial-agent-demo .
+```
 
-- 使用BM25和Embedding改进检索
-- 接入真实LLM Function Calling
-- 将API Key迁移到环境变量
-- 增加结构化日志和请求追踪
-- 增加评测数据集
-- 使用Docker容器化
-- 增加更完整的FastAPI自动测试
-## Agent评测结果
+```powershell
+docker run --rm -p 8001:8001 --env-file .env industrial-agent-demo
+```
 
-评测集包含20道问题，覆盖：
+验证结果：
 
-- 参数查询
-- 同义词查询
-- 维护周期
-- 说明书和SOP检索
-- 工单创建
-- 无答案问题
-- 错误型号
-- 跨设备污染
+- `/health`：200
+- `/parameter`：200
+- `/chat`：200
+- `/ticket`：200
 
-当前结果：
+当前未配置数据库volume，容器删除后 `agent.db`会丢失。
 
-| 指标 | 结果 |
-| --- | ---: |
-| 工具选择正确率 | 20/20 |
-| 参数回答正确率 | 10/10 |
-
-评测文件：
-
-- `evaluation_set.json`
-- `evaluate_agent.py`
 ## 验证与评测结果
 
 验证日期：2026-10-08
@@ -381,5 +387,37 @@ python test_chat_selfcontained.py
 
 ```text
 unittest：13/13通过
+FastAPI接口测试：通过
 工单接口集成测试：通过
 Agent聊天接口集成测试：通过
+```
+
+### Agent评测集
+
+评测集包含20道测试问题，覆盖参数查询、同义词、维护周期、RAG检索、工单创建、错误型号、无答案问题和跨设备污染。
+
+| 指标 | 结果 | 准确率 |
+| --- | ---: | ---: |
+| 工具选择 | 20/20 | 100% |
+| 参数回答 | 10/10 | 100% |
+
+评测文件：
+
+- `evaluation_set.json`
+- `evaluate_agent.py`
+
+## 当前限制
+
+- 参数保存在Python字典中
+- RAG使用基础关键词检索，尚未使用BM25、Embedding和向量数据库
+- Agent决策使用规则模拟，尚未接入真实LLM
+- SQLite数据未挂载Docker volume
+- 尚未部署到云端服务器
+
+## 后续计划
+
+- 使用BM25和Embedding改进检索
+- 接入真实LLM Function Calling
+- 为SQLite配置Docker volume
+- 增加CI自动测试
+- 扩展评测数据集和错误分析
